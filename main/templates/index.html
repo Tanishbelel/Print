@@ -1,0 +1,285 @@
+{% extends 'base.html' %}
+
+{% block title %}Welcome to PrintEase{% endblock %}
+
+{% block start %}
+<!-- Hero Section -->
+<div class="hero-section position-relative mb-5">
+    <div class="hero-overlay"></div>
+    <div class="container py-5 position-relative">
+        <div class="row align-items-center min-vh-75">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-4 text-gradient">Skip the Queue, Print with Ease</h1>
+                <p class="lead mb-4 text-white">Schedule your prints in advance, skip the long queues, and pick up your documents when they're ready.</p>
+                {% if not request.user.is_authenticated %}
+                    <div class="d-flex gap-3">
+                        <a href="{% url 'login' %}" class="btn btn-glow btn-lg px-4">Get Started</a>
+                        <a href="{% url 'register' %}" class="btn btn-outline-light btn-lg px-4">Sign Up</a>
+                    </div>
+                {% else %}
+                    <a href="/main/" class="btn btn-glow btn-lg px-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-printer me-2" viewBox="0 0 16 16">
+                            <path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                            <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/>
+                        </svg>
+                        Print Your Labbooks
+                    </a>
+                {% endif %}
+            </div>
+            <div class="col-lg-6 d-none d-lg-block">
+                <!-- Add printer illustration or image here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="container mb-5 m-50">
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="feature-card">
+                <div class="card-body text-center p-4">
+                    <div class="icon-circle mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-clock" viewBox="0 0 16 16">
+                            <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+                            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+                        </svg>
+                    </div>
+                    <h3 class="h5 mb-3">Schedule Ahead</h3>
+                    <p class="text-muted">Book your print jobs in advance and pick them up at your convenience.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="feature-card">
+                <div class="card-body text-center p-4">
+                    <div class="icon-circle mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-file-earmark-text" viewBox="0 0 16 16">
+                            <path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5z"/>
+                            <path d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/>
+                        </svg>
+                    </div>
+                    <h3 class="h5 mb-3">Multiple Options(coming soon)</h3>
+                    <p class="text-muted">Choose from various print options: color, black & white, single or double-sided.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="feature-card">
+                <div class="card-body text-center p-4">
+                    <div class="icon-circle mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-shop" viewBox="0 0 16 16">
+                            <path d="M2.97 1.35A1 1 0 0 1 3.73 1h8.54a1 1 0 0 1 .76.35l2.609 3.044A1.5 1.5 0 0 1 16 5.37v.255a2.375 2.375 0 0 1-4.25 1.458A2.371 2.371 0 0 1 9.875 8 2.37 2.37 0 0 1 8 7.083 2.37 2.37 0 0 1 6.125 8a2.37 2.37 0 0 1-1.875-.917A2.375 2.375 0 0 1 0 5.625V5.37a1.5 1.5 0 0 1 .361-.976l2.61-3.045zm1.78 4.275a1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0 1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0 1.375 1.375 0 1 0 2.75 0V5.37a.5.5 0 0 0-.12-.325L12.27 2H3.73L1.12 5.045A.5.5 0 0 0 1 5.37v.255a1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0zM1.5 8.5A.5.5 0 0 1 2 9v6h1v-5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v5h6V9a.5.5 0 0 1 1 0v6h.5a.5.5 0 0 1 0 1H.5a.5.5 0 0 1 0-1H1V9a.5.5 0 0 1 .5-.5zM4 15h3v-5H4v5zm5-5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-3zm3 0h-2v3h2v-3z"/>
+                        </svg>
+                    </div>
+                    <h3 class="h5 mb-3">Multiple Vendors(coming soon)</h3>
+                    <p class="text-muted">Choose from various print shops on campus based on location and availability.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Call to Action -->
+<div class="container mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 text-center">
+            <h2 class="fw-bold mb-4 text-gradient">Start Printing Smarter</h2>
+            {% if not request.user.is_authenticated %}
+                <a href="{% url 'register' %}" class="btn btn-glow btn-lg px-4">Sign Up Now</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Modern Color Scheme */
+    :root {
+        --primary-color: #4f46e5;
+        --secondary-color: #818cf8;
+        --accent-color: #6366f1;
+        --dark-color: #1e1b4b;
+        --light-color: #eef2ff;
+    }
+
+    /* Hero Section */
+    .hero-section {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        position: relative;
+        overflow: hidden;
+        padding: 120px 0;
+    }
+
+    .hero-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+        opacity: 0.6;
+    }
+
+    /* Text Gradient */
+    .text-gradient {
+        background: linear-gradient(to right, #fff, var(--light-color));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        color: transparent;
+    }
+
+    /* Feature Cards (continued) */
+    .feature-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+        border: none;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 40px rgba(79, 70, 229, 0.15);
+    }
+
+    .feature-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
+    }
+
+    .feature-card:hover::before {
+        transform: scaleX(1);
+    }
+
+    /* Icon Circle */
+    .icon-circle {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: var(--light-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        transition: all 0.3s ease;
+    }
+
+    .icon-circle svg {
+        color: var(--primary-color);
+        transition: all 0.3s ease;
+    }
+
+    .feature-card:hover .icon-circle {
+        background: var(--primary-color);
+    }
+
+    .feature-card:hover .icon-circle svg {
+        color: white;
+        transform: scale(1.1);
+    }
+
+    /* Glowing Button */
+    .btn-glow {
+        background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        border: none;
+        position: relative;
+        overflow: hidden;
+        z-index: 1;
+        transition: all 0.3s ease;
+    }
+
+    .btn-glow::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 200%;
+        height: 100%;
+        background: linear-gradient(45deg, var(--primary-color), var(--secondary-color), var(--primary-color));
+        transition: all 0.5s ease;
+        z-index: -1;
+        transform: translateX(-50%);
+    }
+
+    .btn-glow:hover::before {
+        transform: translateX(0);
+    }
+
+    .btn-glow:hover {
+        color: white;
+        box-shadow: 0 5px 20px rgba(79, 70, 229, 0.4);
+        transform: translateY(-2px);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .hero-section {
+            padding: 80px 0;
+        }
+
+        .display-4 {
+            font-size: 2.5rem;
+        }
+        
+        .lead {
+            font-size: 1.1rem;
+        }
+
+        .icon-circle {
+            width: 60px;
+            height: 60px;
+        }
+
+        .icon-circle svg {
+            width: 24px;
+            height: 24px;
+        }
+    }
+
+    /* Animations */
+    @keyframes float {
+        0% {
+            transform: translateY(0px);
+        }
+        50% {
+            transform: translateY(-10px);
+        }
+        100% {
+            transform: translateY(0px);
+        }
+    }
+
+    .hero-section img {
+        animation: float 6s ease-in-out infinite;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+        width: 12px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: var(--light-color);
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: var(--primary-color);
+        border-radius: 6px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--secondary-color);
+    }
+</style>
+{% endblock %}
