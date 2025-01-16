@@ -32,13 +32,11 @@ urlpatterns = [
     path('add-to-cart/', add_to_cart, name='add_to_cart'),
     path('update-quantity/', update_quantity, name='update_quantity'),
     path('remove-from-cart/', remove_from_cart, name='remove_from_cart'),
-    path('payment-callback/', payment_callback, name='payment_callback'),
     path('admin/login/', admin_login, name='admin_login'),
     path('dashboard/', admin_dashboard, name='admin_dashboard'),
     path('admin/logout/', admin_logout, name='admin_logout'),
     path('create-admin/', create_admin_account, name='create_admin_account'),
     path('admin-dashboard/', admin_dashboard, name='admin_dashboard'), 
-     path('orders/', orders_page, name='orders'),
     path('orders/cancel/', cancel_order, name='cancel_order'),
      path('admin/orders/', admin_orders, name='admin_orders'),
     path('admin/login/', admin_login, name='admin_login'),
@@ -47,7 +45,7 @@ urlpatterns = [
     path('admin/update-order-status/', update_order_status, name='update_order_status'),
     path('orders/', order_list, name='order_list'),
     path('create-order/', create_order, name='create_order'),
-    path('download-item/', download_item, name='download_item'),
+   
     
     
     

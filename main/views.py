@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect,get_object_or_404
-
+import time
 from .models import *
 from django.contrib.auth.models import User
 from django.contrib import messages
@@ -197,73 +197,7 @@ def main(request):
     ]
     return render(request, 'main.html', {'products': products})
 
-client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
 
-def create_order(request):
-    if request.method == 'POST':
-        # Calculate total amount from cart
-        cart_items = request.user.cart.cart_items.all()
-        subtotal = sum(item.get_total() for item in cart_items)
-        tax = subtotal * 0.08
-        total = subtotal + tax
-        amount_in_paise = int(total * 100)  # Convert to paise
-
-        # Create unique order ID
-        order_id = str(uuid.uuid4())
-
-        # Create Razorpay Order
-        razorpay_order = client.order.create({
-            'amount': amount_in_paise,
-            'currency': 'INR',
-            'payment_capture': 1
-        })
-
-        # Save order in database
-        order = Order.objects.create(
-            user=request.user,
-            order_id=order_id,
-            razorpay_order_id=razorpay_order['id'],
-            total_amount=total,
-        )
-
-        # Return payment initialization data
-        return JsonResponse({
-            'order_id': order.order_id,
-            'razorpay_order_id': razorpay_order['id'],
-            'amount': amount_in_paise,
-            'currency': 'INR',
-            'key': settings.RAZORPAY_KEY_ID
-        })
-
-@csrf_exempt
-def payment_callback(request):
-    if request.method == 'POST':
-        payment_data = json.loads(request.body)
-        razorpay_order_id = payment_data.get('razorpay_order_id')
-        razorpay_payment_id = payment_data.get('razorpay_payment_id')
-        razorpay_signature = payment_data.get('razorpay_signature')
-
-        # Verify payment signature
-        try:
-            client.utility.verify_payment_signature({
-                'razorpay_order_id': razorpay_order_id,
-                'razorpay_payment_id': razorpay_payment_id,
-                'razorpay_signature': razorpay_signature
-            })
-
-            # Update order status
-            order = Order.objects.get(razorpay_order_id=razorpay_order_id)
-            order.razorpay_payment_id = razorpay_payment_id
-            order.razorpay_signature = razorpay_signature
-            order.status = 'completed'
-            order.save()
-
-            # Clear the cart
-            request.user.cart.cart_items.all().delete()
-
-            return JsonResponse({'status': 'success'})
-        except:
-            return JsonResponse({'status': 'failed'}, status=400)
 
 def is_admin(user):
     return user.is_staff
@@ -402,37 +336,6 @@ def verify_admin_code(code):
     Verify the admin registration code.
     Replace this with your actual verification logic.
     """
-@login_required
-def orders_page(request):
-    try:
-        student = Student.objects.get(user=request.user)
-        orders = Order.objects.filter(student=student).prefetch_related('items').order_by('-created_at')
-        
-        # Add status color and calculate totals for each order
-        for order in orders:
-            order.status_color = {
-                'Processing': 'warning',
-                'Ready': 'info',
-                'Completed': 'success',
-                'Cancelled': 'danger'
-            }.get(order.status, 'secondary')
-            
-            # Calculate financial details
-            items = order.items.all()
-            order.subtotal = sum(item.total_price for item in items)
-            order.platform_fee = round(order.subtotal * Decimal('0.02'), 2)  # 2% platform fee
-            order.total_amount = order.subtotal + order.platform_fee
-
-        context = {
-            'orders': orders,
-        }
-        
-        return render(request, 'orders.html', context)
-    except Student.DoesNotExist:
-        context = {
-            'orders': []
-        }
-        return render(request, 'orders.html', context)
 
 @login_required
 @require_POST
@@ -561,88 +464,92 @@ def create_order(request):
 def order_list(request):
     orders = Order.objects.filter(user=request.user).order_by('-created_at')
     return render(request, 'orders.html', {'orders': orders})
-
-@login_required
+@login_required 
 def create_order(request):
     if request.method == 'POST':
         try:
-            cart = CartItem(request)
+            cart_items = CartItem.objects.filter(user=request.user)
+            
+            # Check if cart is empty
+            if not cart_items.exists():
+                return JsonResponse({'status': 'error', 'message': 'Cart is empty'})
             
             # Calculate totals
-            subtotal = sum(item['price'] * item['quantity'] for item in cart)
-            platform_fee = Decimal(subtotal) * Decimal('0.02')
+            subtotal = sum(item.get_total() for item in cart_items)
+            platform_fee = subtotal * Decimal('0.02')  
             total_amount = subtotal + platform_fee
             
-            # Create order
+            # Create order with a unique order number
             order = Order.objects.create(
                 user=request.user,
-                payment_method='Razorpay',  # You can make this dynamic
+                payment_method='Razorpay',
                 subtotal=subtotal,
                 platform_fee=platform_fee,
-                total_amount=total_amount
+                total_amount=total_amount,
+                status='PENDING',
+                order_number=f"ORD-{int(time.time())}"  # Add a unique order number
             )
             
             # Create order items
-            for item in cart:
+            for cart_item in cart_items:
                 OrderItem.objects.create(
                     order=order,
-                    product_name=item['product_name'],
-                    price=item['price'],
-                    quantity=item['quantity'],
-                    download_url=item.get('download_url', '')  # If you have download URLs
+                    product_name=cart_item.product_name,
+                    price=cart_item.price,
+                    quantity=cart_item.quantity
                 )
             
-            # Clear the cart
-            cart.clear()
+            # Clear cart
+            cart_items.delete()
             
+            # Return success with redirect URL
             return JsonResponse({
                 'status': 'success',
-                'order_id': order.order_number
+                'redirect_url': reverse('orders')  # Add the URL name for your orders page
             })
             
         except Exception as e:
-            return JsonResponse({
-                'status': 'error',
-                'message': str(e)
-            })
+            return JsonResponse({'status': 'error', 'message': str(e)})
     
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
-
 @login_required
-def download_item(request):
-    if request.method == 'POST':
-        item_id = request.POST.get('item_id')
-        try:
-            order_item = OrderItem.objects.get(id=item_id)
-            
-            # Check if user owns this order
-            if order_item.order.user != request.user:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'Unauthorized access'
-                })
-            
-            # Check if download URL exists
-            if not order_item.download_url:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'Download URL not available'
-                })
-            
-            return JsonResponse({
-                'status': 'success',
-                'download_url': order_item.download_url
-            })
-            
-        except OrderItem.DoesNotExist:
-            return JsonResponse({
-                'status': 'error',
-                'message': 'Item not found'
-            })
-    
-    return JsonResponse({
-        'status': 'error',
-        'message': 'Invalid request method'
-    })
+def orders(request):
+    try:
+        # Print debugging information
+        print(f"Current user: {request.user.username}")
+        
+        # Get all orders for the current user
+        orders = Order.objects.filter(user=request.user).order_by('-created_at')
+        print(f"Number of orders found: {orders.count()}")
+        
+        # Print details of each order
+        for order in orders:
+            print(f"""
+                Order details:
+                - Order number: {order.order_number}
+                - Status: {order.status}
+                - Total: {order.total_amount}
+                - Items: {order.items.all().count()}
+            """)
 
-
+        context = {
+            'orders': orders,
+            'debug_info': {
+                'user': request.user.username,
+                'order_count': orders.count(),
+                'orders_list': [
+                    {
+                        'number': order.order_number,
+                        'status': order.status,
+                        'total': float(order.total_amount),
+                        'items_count': order.items.all().count()
+                    } for order in orders
+                ]
+            }
+        }
+        
+        return render(request, 'orders.html', context)
+        
+    except Exception as e:
+        print(f"Error in orders view: {str(e)}")
+        return render(request, 'orders.html', {'error': str(e)})
