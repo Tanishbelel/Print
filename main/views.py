@@ -25,6 +25,9 @@ from datetime import timedelta
 from django.core.exceptions import ValidationError
 import re
 from django.views.decorators.http import require_POST
+from django.template.loader import render_to_string
+from django.contrib.admin.views.decorators import staff_member_required
+
 
 
 def home(request):
@@ -221,40 +224,6 @@ def admin_login(request):
             
     return render(request, 'admin_login.html')
 
-@user_passes_test(is_admin, login_url='admin_login')
-def admin_dashboard(request):
-    # Get total users
-    total_users = User.objects.count()
-    
-    # Get active users (logged in within last 30 days)
-    thirty_days_ago = timezone.now() - timedelta(days=30)
-    active_users = User.objects.filter(last_login__gte=thirty_days_ago).count()
-    
-    # Example recent activities (replace with your actual activity model)
-    recent_activities = [
-        {
-            'user': 'john_doe',
-            'action': 'Created new account',
-            'date': timezone.now(),
-            'status': 'Success',
-            'status_color': 'success'
-        },
-        {
-            'user': 'jane_smith',
-            'action': 'Updated profile',
-            'date': timezone.now() - timedelta(hours=2),
-            'status': 'Pending',
-            'status_color': 'warning'
-        }
-    ]
-    
-    context = {
-        'total_users': total_users,
-        'active_users': active_users,
-        'recent_activities': recent_activities
-    }
-    
-    return render(request, 'admin_dashboard.html', context)
 
 def admin_logout(request):
     logout(request)
@@ -331,6 +300,7 @@ def create_admin_account(request):
             
     return render(request, 'admin_register.html')
 
+
 def verify_admin_code(code):
     """
     Verify the admin registration code.
@@ -369,56 +339,6 @@ def cancel_order(request):
 def is_admin(user):
     return user.is_staff and user.is_authenticated
 
-def admin_login(request):
-    if request.method == 'POST':
-        username = request.POST['username']
-        password = request.POST['password']
-        user = authenticate(request, username=username, password=password)
-        if user is not None and user.is_staff:
-            login(request, user)
-            return redirect('admin_orders')
-    return render(request, 'admin_login.html')
-
-def admin_logout(request):
-    logout(request)
-    return redirect('admin_login')
-
-@user_passes_test(is_admin, login_url='admin_login')
-def admin_orders(request):
-    orders = Order.objects.all().order_by('-created_at')
-    return render(request, 'admin_panel.html', {'orders': orders})
-
-@user_passes_test(is_admin, login_url='admin_login')
-def get_order_details(request):
-    order_id = request.GET.get('order_id')
-    try:
-        order = Order.objects.get(order_id=order_id)
-        order_items = order.items.all()
-        return render(request, 'order_details.html', {
-            'order': order,
-            'items': order_items
-        })
-    except Order.DoesNotExist:
-        return JsonResponse({'error': 'Order not found'}, status=404)
-
-@user_passes_test(is_admin, login_url='admin_login')
-def update_order_status(request):
-    if request.method == 'POST':
-        order_id = request.POST.get('order_id')
-        try:
-            order = Order.objects.get(order_id=order_id)
-            # Cycle through statuses
-            status_cycle = {
-                'Processing': 'Completed',
-                'Completed': 'Cancelled',
-                'Cancelled': 'Processing'
-            }
-            order.status = status_cycle[order.status]
-            order.save()
-            return JsonResponse({'status': 'success'})
-        except Order.DoesNotExist:
-            return JsonResponse({'error': 'Order not found'}, status=404)
-    return JsonResponse({'error': 'Invalid request'}, status=400)
 
 def create_order(request):
     if request.method == 'POST':
@@ -553,3 +473,51 @@ def orders(request):
     except Exception as e:
         print(f"Error in orders view: {str(e)}")
         return render(request, 'orders.html', {'error': str(e)})
+
+def is_staff(user):
+    return user.is_staff
+
+@login_required
+def admin_dashboard(request):
+    orders = Order.objects.all().order_by('-created_at')
+    context = {
+        'orders': orders,
+        'total_orders': orders.count(),
+    }
+    return render(request, 'admin_panel.html', context)
+
+@login_required
+@user_passes_test(is_staff)
+def get_order_details(request):
+    order_id = request.GET.get('order_id')
+    try:
+        order = Order.objects.get(id=order_id)
+        html = render_to_string('order_details.html', {'order': order})
+        return JsonResponse({'html': html})
+    except Order.DoesNotExist:
+        return JsonResponse({'error': 'Order not found'}, status=404)
+
+@login_required
+@user_passes_test(is_staff)
+def update_order_status(request):
+    if request.method == 'POST':
+        order_id = request.POST.get('order_id')
+        try:
+            order = Order.objects.get(id=order_id)
+            # Update status based on current status
+            if order.status == 'pending':
+                order.status = 'completed'
+            elif order.status == 'completed':
+                order.status = 'cancelled'
+            else:
+                order.status = 'pending'
+            order.save()
+            return JsonResponse({'status': 'success', 'new_status': order.status})
+        except Order.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Order not found'}, status=404)
+    return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
+
+@staff_member_required
+def order_detail_view(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    return render(request, 'adminorder_details.html', {'order': order})
