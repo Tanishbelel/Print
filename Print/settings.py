@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-
+import dj_database_url
 # Load environment variables
 load_dotenv()
 
@@ -66,10 +66,7 @@ WSGI_APPLICATION = 'Print.wsgi.application'
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# Additional static files location
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'Print/static'),
-]
+
 
 # Media files
 MEDIA_URL = '/media/'
@@ -79,3 +76,11 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Keep any other specific settings you have below this point...
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
+DATABASES["default"] = dj_database_url.parse("postgresql://print_m1s7_user:OV1a3H34vn5cgL2niroMrojhCZYwGVZj@dpg-cu5u9b0gph6c73c1o3o0-a.oregon-postgres.render.com/print_m1s7")
+#
