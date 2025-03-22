@@ -27,6 +27,7 @@ import re
 from django.views.decorators.http import require_POST
 from django.template.loader import render_to_string
 from django.contrib.admin.views.decorators import staff_member_required
+from .forms import *
 
 
 
@@ -93,8 +94,8 @@ def logout_page(request):
 
 @login_required(login_url = '/login/')
 def main(request):
-        
-    return render(request , "main.html")
+    events = Event.objects.filter(status='published').order_by('-created_at')
+    return render(request, 'main.html', {'events': events})
 @login_required(login_url = '/login/')
 def product_list(request):
     return render(request, 'prods.html')
@@ -187,18 +188,8 @@ def get_cart_total(user):
     return sum(item.get_total() for item in cart_items)
 @login_required
 def main(request):
-    products = [
-        {"name": "Physics Labbook", "price": Decimal('50.00')},
-        {"name": "Chemistry Labbook", "price": Decimal('50.00')},
-        {"name": "Maths Labbook", "price": Decimal('50.00')},
-        {"name": "Biology Labbook", "price": Decimal('45.00')},
-        {"name": "Computer Science Notes", "price": Decimal('60.00')},
-        {"name": "English Grammar Book", "price": Decimal('40.00')},
-        {"name": "History Notes", "price": Decimal('35.00')},
-        {"name": "Geography Atlas", "price": Decimal('75.00')},
-        {"name": "Economics Study Guide", "price": Decimal('55.00')}
-    ]
-    return render(request, 'main.html', {'products': products})
+    events = Event.objects.filter(status='published').order_by('-created_at')
+    return render(request, 'main.html', {'events': events})
 
 
 
@@ -260,16 +251,6 @@ def create_admin_account(request):
         # Password confirmation validation
         if password != confirm_password:
             messages.error(request, 'Passwords do not match.')
-            return render(request, 'admin_register.html')
-
-        # Admin code validation
-        if not admin_code:
-            messages.error(request, 'Admin registration code is required.')
-            return render(request, 'admin_register.html')
-
-        # Verify admin code - replace 'YOUR_ADMIN_CODE' with actual code verification logic
-        if not verify_admin_code(admin_code):
-            messages.error(request, 'Invalid admin registration code.')
             return render(request, 'admin_register.html')
 
         # Check if username already exists
@@ -521,3 +502,116 @@ def update_order_status(request):
 def order_detail_view(request, order_id):
     order = get_object_or_404(Order, id=order_id)
     return render(request, 'adminorder_details.html', {'order': order})
+
+@login_required
+def vendor_dashboard(request):
+    try:
+        vendor = request.user.vendor
+        events = Event.objects.filter(vendor=vendor)
+        
+        
+        return render(request, 'dashboard.html', {'events': events})
+    except Vendor.DoesNotExist:
+        messages.warning(request, "Please register as a vendor first.")
+        return redirect('vendor_registration')
+@login_required
+def vendor_registration(request):
+    try:
+        # Check if user already has a vendor profile
+        vendor = request.user.vendor
+        messages.info(request, "You are already registered as a vendor.")
+        return redirect('vendor_dashboard')
+    except Vendor.DoesNotExist:
+        if request.method == 'POST':
+            form = VendorRegistrationForm(request.POST)
+            if form.is_valid():
+                vendor = form.save(commit=False)
+                vendor.user = request.user
+                vendor.save()
+                messages.success(request, "Vendor registration successful!")
+                return redirect('vendor_dashboard')
+        else:
+            form = VendorRegistrationForm()
+        return render(request, 'vendor_registration.html', {'form': form})
+
+@login_required
+def create_event(request):
+    try:
+        vendor = request.user.vendor
+    except Vendor.DoesNotExist:
+        messages.warning(request, "Please register as a vendor first.")
+        return redirect('vendor_registration')
+
+    if request.method == 'POST':
+        form = EventForm(request.POST, request.FILES)
+        if form.is_valid():
+            event = form.save(commit=False)
+            event.vendor = vendor
+            event.save()
+            messages.success(request, 'Event created successfully!')
+            return redirect('vendor_dashboard')
+    else:
+        form = EventForm()
+    return render(request, 'create_event.html', {'form': form})
+
+def delete_event(request, event_id):
+    # Get the event or return 404
+    event = get_object_or_404(Event, id=event_id)
+    
+    # Check if the current user is the vendor who created this event
+    if request.user.vendor == event.vendor:
+        # Store the name for the success message
+        event_name = event.name
+        event.delete()
+        messages.success(request, f"'{event_name}' has been deleted successfully.")
+    else:
+        messages.error(request, "You don't have permission to delete this event.")
+    
+    # Redirect to the vendor dashboard
+    return redirect('vendor_dashboard')
+
+@login_required
+def schedule_print(request):
+    if request.method == 'POST':
+        # Get form data
+        document_title = request.POST.get('document_title')
+        document_file = request.FILES.get('document_file')
+        print_type = request.POST.get('print_type')
+        print_side = request.POST.get('print_side')
+        copies = int(request.POST.get('copies'))
+        vendor_id = int(request.POST.get('vendor'))
+        pickup_time = request.POST.get('pickup_time')
+        
+        # Get vendor
+        vendor = Vendor.objects.get(id=vendor_id)
+        
+        # Create PrintJob
+        print_job = PrintJob(
+            user=request.user,
+            document_title=document_title,
+            document_file=document_file,
+            print_type=print_type,
+            print_side=print_side,
+            copies=copies,
+            vendor=vendor,
+            pickup_time=pickup_time
+        )
+        print_job.save()
+        
+        # Calculate price
+        price = print_job.calculate_price()
+        
+        # Create CartItem
+        cart_item = CartItem(
+            user=request.user,
+            product_name=f"Print: {document_title} ({copies} copies, {print_type}, {print_side})",
+            price=price,
+            quantity=1
+        )
+        cart_item.save()
+        
+        return redirect('cart')  # Redirect to cart page
+    
+    # For GET requests, just render the form
+    vendors = Vendor.objects.all()
+    return render(request, 'prode.html', {'vendors': vendors})

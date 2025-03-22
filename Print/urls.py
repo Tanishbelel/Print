@@ -44,8 +44,11 @@ urlpatterns = [
     path('admin/order-details/<int:order_id>/', get_order_details, name='get_order_details'),
     path('admin/update-order-status/', update_order_status, name='update_order_status'),
     path('admin/order/<int:order_id>/', order_detail_view, name='order_detail'),
-    
-   
+    path('admin/dashboard/vendor/dashboard/', vendor_dashboard, name='vendor_dashboard'),
+    path('vendor/create-event/', create_event, name='create_event'),
+    path('vendor/register/', vendor_registration, name='vendor_registration'),
+    path('events/delete/<int:event_id>/', delete_event, name='delete_event'),
+   path('schedule-print/', schedule_print, name='schedule_print'),
     
     
     
